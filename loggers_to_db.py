@@ -1,8 +1,10 @@
 import os
 import pandas as pd
 import tkinter as tk
+import csv
 from tkinter import filedialog, messagebox
 
+sensor_type_for_saving = 0
 class SensorDataProcessorApp:
     def __init__(self, root):
         self.root = root
@@ -84,6 +86,8 @@ class SensorDataProcessorApp:
         return None
 
     def process_promodem_files(self):
+        global sensor_type_for_saving
+        sensor_type_for_saving = 1
         if not self.folder_path or not self.files_list:
             messagebox.showerror("Ошибка", "Папка не выбрана или файлы отсутствуют!")
             return
@@ -136,7 +140,7 @@ class SensorDataProcessorApp:
                         "ID_ДАТЧИКА": self.dev_eui,
                         "КАНАЛ": channel_number,
                         "ДАТА": df_raw[date_column],  # Используем найденный столбец с датой
-                        "ИЗМЕРЕНИЕ": '"' + df_raw[a_col] + '"'  # Значение из a{i} в кавычках
+                        "ИЗМЕРЕНИЕ": df_raw[a_col]  # Значение из a{i} в кавычках
                     })
                     result_df = pd.concat([result_df, rows_to_add], ignore_index=True)
 
@@ -168,6 +172,8 @@ class SensorDataProcessorApp:
         return None
 
     def process_gorizont_files(self):
+        global sensor_type_for_saving
+        sensor_type_for_saving = 2
         if not self.folder_path or not self.files_list:
             messagebox.showerror("Ошибка", "Папка не выбрана или файлы отсутствуют!")
             return
@@ -254,15 +260,22 @@ class SensorDataProcessorApp:
             messagebox.showwarning("Ошибка", "Неизвестный тип датчика!")
 
     def save_output(self):
+        global sensor_type_for_saving
         if not hasattr(self, 'output_df') or self.output_df.empty:
             messagebox.showerror("Ошибка", "Нет данных для сохранения! Сначала обработайте файлы.")
             return
 
         save_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
         if save_path:
-            # Сохраняем данные без заголовков
-            self.output_df.to_csv(save_path, index=False, header=False, quoting=3)  # quoting=3 для сохранения кавычек как есть
-            messagebox.showinfo("Успех", f"Результаты успешно сохранены в {save_path}!")
+            try:
+                # Сохраняем данные с минимальной цитатностью (quoting) и экранированием кавычек
+                if sensor_type_for_saving == 1:
+                  self.output_df.to_csv(save_path, index=False, header=False, quoting=csv.QUOTE_MINIMAL, escapechar='\\')
+                if sensor_type_for_saving == 2:
+                  self.output_df.to_csv(save_path, index=False, header=False, quoting=3)
+                messagebox.showinfo("Успех", f"Результаты успешно сохранены в {save_path}!")
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Ошибка при сохранении файла: {str(e)}")
         else:
             messagebox.showwarning("Внимание", "Сохранение файла отменено.")
 
