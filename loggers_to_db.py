@@ -3,6 +3,7 @@ import pandas as pd
 import tkinter as tk
 import csv
 from tkinter import filedialog, messagebox
+import webbrowser
 
 sensor_type_for_saving = 0
 class SensorDataProcessorApp:
@@ -53,6 +54,17 @@ class SensorDataProcessorApp:
         # Кнопка для сохранения итогового файла
         button_save = tk.Button(frame, text="Сохранить результат", command=self.save_output)
         button_save.pack(pady=10)
+
+        github_link = tk.Label(frame, text="Исходный код", fg="blue", cursor="hand2", anchor="w")
+        github_link.pack(pady=5)
+        github_link.bind("<Button-1>", lambda e: self.open_link("https://github.com/some-crap/hydro_loggers/tree/main"))
+
+        telegram_link = tk.Label(frame, text="Разработка", fg="blue", cursor="hand2", anchor="w")
+        telegram_link.pack(pady=5)
+        telegram_link.bind("<Button-1>", lambda e: self.open_link("https://t.me/y_durov"))
+
+    def open_link(self, url):
+        webbrowser.open_new(url)
 
     def select_folder(self):
         self.folder_path = filedialog.askdirectory()
@@ -143,7 +155,8 @@ class SensorDataProcessorApp:
                         "ИЗМЕРЕНИЕ": df_raw[a_col]  # Значение из a{i} в кавычках
                     })
                     result_df = pd.concat([result_df, rows_to_add], ignore_index=True)
-
+                    result_df.replace("", pd.NA, inplace=True)  # Заменяем пустые строки на NaN
+                    result_df = result_df.dropna(how='any')  # Удаляем строки с NaN
                 output_data.append(result_df)
     
             except Exception as e:
@@ -231,7 +244,8 @@ class SensorDataProcessorApp:
                     })
                     # Объединяем текущие строки с результатом
                     result_df = pd.concat([result_df, rows_to_add], ignore_index=True)
-
+                    result_df.replace("", pd.NA, inplace=True)  # Заменяем пустые строки на NaN
+                    result_df = result_df.dropna(how='any')  # Удаляем строки с NaN
                 output_data.append(result_df)
 
             except Exception as e:
